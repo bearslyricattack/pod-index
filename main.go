@@ -11,6 +11,7 @@ import (
 
 	"github.com/weipengyu/pod-index/pkg/cache"
 	"github.com/weipengyu/pod-index/pkg/handler"
+	"github.com/weipengyu/pod-index/pkg/middleware"
 )
 
 func main() {
@@ -19,13 +20,13 @@ func main() {
 		port = "8080"
 	}
 
-	// 初始化 Pod 缓存
+	// Initialize pod cache
 	podCache, err := cache.NewPodCache()
 	if err != nil {
 		log.Fatalf("Failed to initialize pod cache: %v", err)
 	}
 
-	// 启动 informer
+	// Start informer
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -33,17 +34,18 @@ func main() {
 		log.Fatalf("Failed to start pod cache: %v", err)
 	}
 
-	// 等待缓存同步
+	// Wait for cache sync
 	log.Println("Waiting for cache to sync...")
 	if !podCache.WaitForCacheSync(ctx) {
 		log.Fatal("Failed to sync cache")
 	}
 	log.Println("Cache synced successfully")
 
-	// 设置 HTTP 处理器
+	// Setup HTTP handlers with basic auth
+	auth := middleware.NewBasicAuth()
 	h := handler.NewHandler(podCache)
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/pod", h.GetPodByUID)
+	mux.HandleFunc("/api/v1/pod", auth.Middleware(h.GetPodByUID))
 	mux.HandleFunc("/health", h.Health)
 	mux.HandleFunc("/ready", h.Ready)
 
@@ -55,15 +57,18 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// 启动 HTTP 服务器
+	// Start HTTP server
 	go func() {
 		log.Printf("Starting server on port %s", port)
+		if auth.IsEnabled() {
+			log.Println("Basic authentication is enabled")
+		}
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
-	// 优雅关闭
+	// Graceful shutdown
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh

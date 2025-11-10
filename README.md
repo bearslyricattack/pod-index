@@ -1,25 +1,25 @@
 # Pod Index
 
-Pod Index 是一个基于 Kubernetes Informer 的 Pod 信息缓存服务，提供高效的 Pod 查询 HTTP API。
+Pod Index is a Pod information caching service based on Kubernetes Informer, providing an efficient HTTP API for Pod queries.
 
-## 功能特性
+## Features
 
-- 使用 Kubernetes Informer 实时缓存集群中所有 Pod 信息
-- 提供 HTTP API 通过 Pod UID 查询 Pod 详细信息
-- 健康检查和就绪检查端点
-- 轻量级，资源占用低
-- 支持集群内和集群外运行
+- Uses Kubernetes Informer to cache all Pod information from the cluster in real-time
+- Provides HTTP API to query Pod details by Pod UID
+- Health check and readiness check endpoints
+- Lightweight with low resource usage
+- Supports both in-cluster and out-of-cluster operation
 
-## API 接口
+## API Endpoints
 
-### 查询 Pod 信息
+### Query Pod Information
 
 **GET** `/api/v1/pod?uid={pod-uid}`
 
-查询参数：
-- `uid`: Pod 的 UID（必填）
+Query Parameters:
+- `uid`: Pod UID (required)
 
-响应示例：
+Response Example:
 ```json
 {
   "uid": "1234abcd-5678-90ef-ghij-klmnopqrstuv",
@@ -36,22 +36,22 @@ Pod Index 是一个基于 Kubernetes Informer 的 Pod 信息缓存服务，提�
 }
 ```
 
-### 健康检查
+### Health Check
 
 **GET** `/health`
 
-响应示例：
+Response Example:
 ```json
 {
   "status": "healthy"
 }
 ```
 
-### 就绪检查
+### Readiness Check
 
 **GET** `/ready`
 
-响应示例：
+Response Example:
 ```json
 {
   "status": "ready",
@@ -59,125 +59,125 @@ Pod Index 是一个基于 Kubernetes Informer 的 Pod 信息缓存服务，提�
 }
 ```
 
-## 本地开发
+## Local Development
 
-### 前置要求
+### Prerequisites
 
 - Go 1.21+
-- kubectl 配置可访问的 Kubernetes 集群
-- kubeconfig 文件位于 `~/.kube/config`
+- kubectl configured to access a Kubernetes cluster
+- kubeconfig file located at `~/.kube/config`
 
-### 运行
+### Run
 
 ```bash
-# 下载依赖
+# Download dependencies
 go mod download
 
-# 运行服务
+# Run service
 go run main.go
 ```
 
-服务将在 `http://localhost:8080` 启动。
+The service will start at `http://localhost:8080`.
 
-### 测试 API
+### Test API
 
 ```bash
-# 获取一个 Pod 的 UID
+# Get a Pod UID
 POD_UID=$(kubectl get pod -n default -o jsonpath='{.items[0].metadata.uid}')
 
-# 查询 Pod 信息
+# Query Pod information
 curl "http://localhost:8080/api/v1/pod?uid=${POD_UID}"
 
-# 健康检查
+# Health check
 curl http://localhost:8080/health
 
-# 就绪检查
+# Readiness check
 curl http://localhost:8080/ready
 ```
 
-## Docker 构建
+## Docker Build
 
 ```bash
-# 构建镜像
+# Build image
 docker build -t pod-index:latest .
 
-# 本地运行（需要挂载 kubeconfig）
+# Run locally (mount kubeconfig)
 docker run -d \
   -p 8080:8080 \
   -v ~/.kube/config:/root/.kube/config:ro \
   pod-index:latest
 ```
 
-## Kubernetes 部署
+## Kubernetes Deployment
 
-### 部署到集群
+### Deploy to Cluster
 
 ```bash
-# 应用所有部署文件
+# Apply all deployment files
 kubectl apply -k deploy/
 
-# 或者分别应用
+# Or apply individually
 kubectl apply -f deploy/rbac.yaml
 kubectl apply -f deploy/deployment.yaml
 kubectl apply -f deploy/service.yaml
 ```
 
-### 验证部署
+### Verify Deployment
 
 ```bash
-# 检查 Pod 状态
+# Check Pod status
 kubectl get pods -l app=pod-index
 
-# 查看日志
+# View logs
 kubectl logs -l app=pod-index -f
 
-# 端口转发测试
+# Port forward for testing
 kubectl port-forward svc/pod-index 8080:80
 ```
 
-### 测试服务
+### Test Service
 
 ```bash
-# 获取一个 Pod 的 UID
+# Get a Pod UID
 POD_UID=$(kubectl get pod -n default -o jsonpath='{.items[0].metadata.uid}')
 
-# 通过端口转发测试
+# Test through port forward
 curl "http://localhost:8080/api/v1/pod?uid=${POD_UID}"
 ```
 
-## 环境变量
+## Environment Variables
 
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| PORT | HTTP 服务监听端口 | 8080 |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| PORT | HTTP service listening port | 8080 |
 
-## 安全性
+## Security
 
-- 遵循最小权限原则，仅需要 `get`, `list`, `watch` pods 权限
-- 容器以非 root 用户运行
-- 启用只读根文件系统
-- 禁用特权提升
+- Follows the principle of least privilege, only requires `get`, `list`, `watch` pods permissions
+- Container runs as non-root user
+- Enables read-only root filesystem
+- Disables privilege escalation
 
-## 项目结构
+## Project Structure
 
 ```
 .
-├── main.go                 # 主程序入口
+├── main.go                 # Main program entry point
 ├── pkg/
-│   ├── cache/             # Informer 缓存实现
+│   ├── cache/             # Informer cache implementation
 │   │   └── pod_cache.go
-│   └── handler/           # HTTP 处理器
+│   └── handler/           # HTTP handlers
 │       └── handler.go
-├── deploy/                # Kubernetes 部署文件
-│   ├── rbac.yaml         # RBAC 权限配置
-│   ├── deployment.yaml   # Deployment 配置
-│   ├── service.yaml      # Service 配置
+├── deploy/                # Kubernetes deployment files
+│   ├── rbac.yaml         # RBAC permission configuration
+│   ├── deployment.yaml   # Deployment configuration
+│   ├── service.yaml      # Service configuration
 │   └── kustomization.yaml
-├── Dockerfile            # Docker 构建文件
-├── go.mod               # Go 模块定义
-└── README.md            # 项目文档
+├── Dockerfile            # Docker build file
+├── go.mod               # Go module definition
+└── README.md            # Project documentation
 ```
 
-## 许可证
+## License
 
 MIT

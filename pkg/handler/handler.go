@@ -9,25 +9,24 @@ import (
 	"github.com/weipengyu/pod-index/pkg/cache"
 )
 
-// Handler HTTP 请求处理器
+// Handler handles HTTP requests
 type Handler struct {
 	podCache *cache.PodCache
 }
 
-// NewHandler 创建新的处理器实例
+// NewHandler creates a new handler instance
 func NewHandler(podCache *cache.PodCache) *Handler {
 	return &Handler{
 		podCache: podCache,
 	}
 }
 
-// ErrorResponse 错误响应结构
+// ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// GetPodByUID 根据 UID 获取 Pod 信息
-// Query parameter: uid
+// GetPodByUID retrieves pod information by UID
 func (h *Handler) GetPodByUID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		h.respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -49,7 +48,7 @@ func (h *Handler) GetPodByUID(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, podInfo, http.StatusOK)
 }
 
-// Health 健康检查端点
+// Health returns health status
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		h.respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -59,7 +58,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, map[string]string{"status": "healthy"}, http.StatusOK)
 }
 
-// Ready 就绪检查端点
+// Ready returns readiness status
 func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		h.respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -77,14 +76,14 @@ func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// respondJSON 发送 JSON 响应
+// respondJSON sends a JSON response
 func (h *Handler) respondJSON(w http.ResponseWriter, data interface{}, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
-// respondError 发送错误响应
+// respondError sends an error response
 func (h *Handler) respondError(w http.ResponseWriter, message string, statusCode int) {
 	h.respondJSON(w, ErrorResponse{Error: message}, statusCode)
 }

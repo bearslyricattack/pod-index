@@ -1,72 +1,72 @@
 # Pod Index
 
-一个基于 Kubernetes Informer 的高性能 Pod 信息缓存服务。
+A high-performance Pod information caching service based on Kubernetes Informer.
 
-## 项目简介
+## Project Overview
 
-Pod Index 使用 Kubernetes Informer 机制实时缓存集群中所有 Pod 的信息，并提供简洁的 HTTP API 供查询。该服务具有以下特点：
+Pod Index uses the Kubernetes Informer mechanism to cache information for all Pods in the cluster in real-time and provides a simple HTTP API for querying. The service features:
 
-- **高效缓存**：利用 Kubernetes Informer 机制，自动同步并缓存所有 Pod 信息
-- **快速查询**：通过 Pod UID 快速检索 Pod 详细信息，无需每次访问 API Server
-- **资源友好**：轻量级设计，最小资源占用
-- **生产就绪**：完整的健康检查、优雅关闭、错误处理机制
-- **安全合规**：遵循最小权限原则，容器安全加固
+- **Efficient Caching**: Leverages Kubernetes Informer mechanism to automatically sync and cache all Pod information
+- **Fast Queries**: Quickly retrieve Pod details by Pod UID without accessing the API Server each time
+- **Resource Friendly**: Lightweight design with minimal resource footprint
+- **Production Ready**: Complete health checks, graceful shutdown, and error handling mechanisms
+- **Security Compliant**: Follows the principle of least privilege with container security hardening
 
-## 快速开始
+## Quick Start
 
-### 前置条件
+### Prerequisites
 
-- Go 1.21 或更高版本
-- Kubernetes 集群（本地或远程）
-- kubectl 已配置并可访问集群
+- Go 1.21 or higher
+- Kubernetes cluster (local or remote)
+- kubectl configured and accessible to cluster
 
-### 本地运行
+### Local Execution
 
-1. **克隆项目**
+1. **Clone Project**
 ```bash
 git clone <your-repo-url>
 cd pod-index
 ```
 
-2. **下载依赖**
+2. **Download Dependencies**
 ```bash
 go mod download
 ```
 
-3. **运行服务**
+3. **Run Service**
 ```bash
 go run main.go
 ```
 
-服务将在 `http://localhost:8080` 启动。
+The service will start at `http://localhost:8080`.
 
-### 测试 API
+### Test API
 
 ```bash
-# 健康检查
+# Health check
 curl http://localhost:8080/health
 
-# 就绪检查
+# Readiness check
 curl http://localhost:8080/ready
 
-# 查询 Pod 信息
+# Query Pod information
 POD_UID=$(kubectl get pod -n default -o jsonpath='{.items[0].metadata.uid}')
 curl "http://localhost:8080/api/v1/pod?uid=${POD_UID}"
 ```
 
-## API 文档
+## API Documentation
 
-### 1. 查询 Pod 信息
+### 1. Query Pod Information
 
-**请求**
+**Request**
 ```
 GET /api/v1/pod?uid={pod-uid}
 ```
 
-**参数**
-- `uid`: Pod 的 UID（必填）
+**Parameters**
+- `uid`: Pod UID (required)
 
-**成功响应** (200 OK)
+**Success Response** (200 OK)
 ```json
 {
   "uid": "1234abcd-5678-90ef-ghij-klmnopqrstuv",
@@ -85,35 +85,35 @@ GET /api/v1/pod?uid={pod-uid}
 }
 ```
 
-**错误响应** (404 Not Found)
+**Error Response** (404 Not Found)
 ```json
 {
   "error": "pod with UID xxx not found"
 }
 ```
 
-### 2. 健康检查
+### 2. Health Check
 
-**请求**
+**Request**
 ```
 GET /health
 ```
 
-**响应** (200 OK)
+**Response** (200 OK)
 ```json
 {
   "status": "healthy"
 }
 ```
 
-### 3. 就绪检查
+### 3. Readiness Check
 
-**请求**
+**Request**
 ```
 GET /ready
 ```
 
-**响应** (200 OK)
+**Response** (200 OK)
 ```json
 {
   "status": "ready",
@@ -121,15 +121,15 @@ GET /ready
 }
 ```
 
-## Docker 部署
+## Docker Deployment
 
-### 构建镜像
+### Build Image
 
 ```bash
 docker build -t pod-index:latest .
 ```
 
-### 本地运行（使用 kubeconfig）
+### Local Run (using kubeconfig)
 
 ```bash
 docker run -d \
@@ -139,135 +139,135 @@ docker run -d \
   pod-index:latest
 ```
 
-### 测试容器
+### Test Container
 
 ```bash
-# 查看日志
+# View logs
 docker logs -f pod-index
 
-# 测试 API
+# Test API
 curl http://localhost:8080/health
 ```
 
-## Kubernetes 部署
+## Kubernetes Deployment
 
-### 方式一：使用 Kustomize（推荐）
+### Method 1: Using Kustomize (Recommended)
 
 ```bash
-# 部署所有资源
+# Deploy all resources
 kubectl apply -k deploy/
 
-# 查看部署状态
+# View deployment status
 kubectl get pods -l app=pod-index
 kubectl logs -l app=pod-index -f
 ```
 
-### 方式二：使用自动化脚本
+### Method 2: Using Automation Script
 
 ```bash
-# 构建并部署
+# Build and deploy
 ./scripts/build-and-deploy.sh
 ```
 
-### 方式三：手动部署
+### Method 3: Manual Deployment
 
 ```bash
-# 1. 创建 RBAC 权限
+# 1. Create RBAC permissions
 kubectl apply -f deploy/rbac.yaml
 
-# 2. 部署应用
+# 2. Deploy application
 kubectl apply -f deploy/deployment.yaml
 
-# 3. 创建服务
+# 3. Create service
 kubectl apply -f deploy/service.yaml
 ```
 
-### 验证部署
+### Verify Deployment
 
 ```bash
-# 检查 Pod 状态
+# Check Pod status
 kubectl get pods -l app=pod-index
 
-# 查看日志
+# View logs
 kubectl logs -l app=pod-index -f
 
-# 端口转发进行测试
+# Port forward for testing
 kubectl port-forward svc/pod-index 8080:80
 
-# 在另一个终端测试
+# Test in another terminal
 ./scripts/test-api.sh http://localhost:8080
 ```
 
-### 卸载
+### Uninstall
 
 ```bash
 kubectl delete -k deploy/
-# 或
+# or
 make undeploy
 ```
 
-## Makefile 命令
+## Makefile Commands
 
-项目提供了便捷的 Makefile 命令：
+The project provides convenient Makefile commands:
 
 ```bash
-make help           # 显示所有可用命令
-make build          # 编译应用
-make run            # 本地运行
-make test           # 运行测试
-make docker-build   # 构建 Docker 镜像
-make docker-run     # 运行 Docker 容器
-make deploy         # 部署到 Kubernetes
-make undeploy       # 从 Kubernetes 卸载
-make clean          # 清理构建文件
-make deps           # 下载并整理依赖
+make help           # Display all available commands
+make build          # Compile application
+make run            # Run locally
+make test           # Run tests
+make docker-build   # Build Docker image
+make docker-run     # Run Docker container
+make deploy         # Deploy to Kubernetes
+make undeploy       # Uninstall from Kubernetes
+make clean          # Clean build files
+make deps           # Download and tidy dependencies
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 pod-index/
-├── main.go                      # 应用入口
+├── main.go                      # Application entry point
 ├── pkg/
-│   ├── cache/                  # Informer 缓存层
-│   │   └── pod_cache.go       # Pod 缓存实现
-│   └── handler/               # HTTP 处理层
-│       └── handler.go         # API 处理器
-├── deploy/                    # Kubernetes 部署文件
-│   ├── rbac.yaml             # RBAC 权限配置
-│   ├── deployment.yaml       # Deployment 配置
-│   ├── service.yaml          # Service 配置
-│   └── kustomization.yaml    # Kustomize 配置
-├── scripts/                  # 辅助脚本
-│   ├── build-and-deploy.sh  # 自动构建部署
-│   └── test-api.sh          # API 测试脚本
-├── Dockerfile               # Docker 构建文件
-├── .dockerignore           # Docker 忽略文件
-├── Makefile                # Make 命令
-├── go.mod                  # Go 模块定义
-├── go.sum                  # Go 依赖锁定
-├── LICENSE                 # 开源协议
-└── README.md              # 项目文档
+│   ├── cache/                  # Informer cache layer
+│   │   └── pod_cache.go       # Pod cache implementation
+│   └── handler/               # HTTP handler layer
+│       └── handler.go         # API handler
+├── deploy/                    # Kubernetes deployment files
+│   ├── rbac.yaml             # RBAC permission configuration
+│   ├── deployment.yaml       # Deployment configuration
+│   ├── service.yaml          # Service configuration
+│   └── kustomization.yaml    # Kustomize configuration
+├── scripts/                  # Helper scripts
+│   ├── build-and-deploy.sh  # Automated build and deploy
+│   └── test-api.sh          # API test script
+├── Dockerfile               # Docker build file
+├── .dockerignore           # Docker ignore file
+├── Makefile                # Make commands
+├── go.mod                  # Go module definition
+├── go.sum                  # Go dependency lock
+├── LICENSE                 # Open source license
+└── README.md              # Project documentation
 ```
 
-## 配置说明
+## Configuration
 
-### 环境变量
+### Environment Variables
 
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| PORT | HTTP 服务监听端口 | 8080 |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| PORT | HTTP service listening port | 8080 |
 
-### Kubernetes 配置
+### Kubernetes Configuration
 
-应用会按以下顺序查找 Kubernetes 配置：
+The application looks for Kubernetes configuration in the following order:
 
-1. 集群内配置（In-Cluster Config）- 适用于部署在 Kubernetes 中
-2. Kubeconfig 文件（`~/.kube/config`）- 适用于本地开发
+1. In-Cluster Config - for deployment in Kubernetes
+2. Kubeconfig file (`~/.kube/config`) - for local development
 
-### RBAC 权限
+### RBAC Permissions
 
-服务需要以下最小权限：
+The service requires the following minimum permissions:
 
 ```yaml
 - apiGroups: [""]
@@ -275,69 +275,69 @@ pod-index/
   verbs: ["get", "list", "watch"]
 ```
 
-## 安全最佳实践
+## Security Best Practices
 
-本项目实施了以下安全措施：
+This project implements the following security measures:
 
-1. **最小权限原则**：仅请求必要的 RBAC 权限
-2. **非 root 运行**：容器以 UID 65534 运行
-3. **只读根文件系统**：防止运行时文件篡改
-4. **禁用特权提升**：防止权限提升攻击
-5. **删除所有 Capabilities**：最小化容器能力
-6. **资源限制**：设置 CPU 和内存限制，防止资源耗尽
+1. **Principle of Least Privilege**: Only requests necessary RBAC permissions
+2. **Non-root Execution**: Container runs as UID 65534
+3. **Read-only Root Filesystem**: Prevents runtime file tampering
+4. **Disable Privilege Escalation**: Prevents privilege escalation attacks
+5. **Drop All Capabilities**: Minimizes container capabilities
+6. **Resource Limits**: Sets CPU and memory limits to prevent resource exhaustion
 
-## 常见问题
+## FAQ
 
-### Q: 服务无法连接到 Kubernetes API
+### Q: Service cannot connect to Kubernetes API
 
-**A:** 检查以下几点：
-- 确保 kubeconfig 配置正确（本地运行）
-- 确保 ServiceAccount 和 RBAC 配置正确（集群运行）
-- 检查网络连接和防火墙设置
+**A:** Check the following:
+- Ensure kubeconfig is configured correctly (local run)
+- Ensure ServiceAccount and RBAC are configured correctly (cluster run)
+- Check network connection and firewall settings
 
-### Q: Pod 查询返回 404
+### Q: Pod query returns 404
 
-**A:** 可能原因：
-- 缓存尚未同步完成，等待几秒后重试
-- Pod UID 不正确，使用 `kubectl get pod -o yaml` 查看正确的 UID
-- Pod 已被删除
+**A:** Possible reasons:
+- Cache not yet synced, retry after a few seconds
+- Pod UID is incorrect, use `kubectl get pod -o yaml` to view the correct UID
+- Pod has been deleted
 
-### Q: 如何在生产环境部署？
+### Q: How to deploy in production?
 
-**A:** 建议：
-1. 修改镜像拉取策略为 `Always`
-2. 根据集群规模调整资源限制
-3. 配置 HPA（Horizontal Pod Autoscaler）如需要
-4. 启用监控和日志收集
-5. 使用 Ingress 或 LoadBalancer 暴露服务
+**A:** Recommendations:
+1. Change image pull policy to `Always`
+2. Adjust resource limits based on cluster size
+3. Configure HPA (Horizontal Pod Autoscaler) if needed
+4. Enable monitoring and log collection
+5. Use Ingress or LoadBalancer to expose service
 
-### Q: 支持多集群吗？
+### Q: Does it support multi-cluster?
 
-**A:** 当前版本仅支持单集群。如需多集群支持，可以：
-- 在每个集群部署一个实例
-- 使用统一的前端聚合查询
+**A:** Current version only supports single cluster. For multi-cluster support, you can:
+- Deploy one instance in each cluster
+- Use a unified frontend to aggregate queries
 
-## 性能考虑
+## Performance Considerations
 
-- **内存占用**：约 100-200MB + (Pod 数量 × 2KB)
-- **启动时间**：通常 5-10 秒完成缓存同步
-- **查询延迟**：< 1ms（内存查询）
-- **并发能力**：支持高并发读取
+- **Memory Usage**: Approximately 100-200MB + (number of Pods × 2KB)
+- **Startup Time**: Usually 5-10 seconds to complete cache sync
+- **Query Latency**: < 1ms (in-memory query)
+- **Concurrency**: Supports high concurrent reads
 
-## 贡献指南
+## Contributing
 
-欢迎贡献！请：
+Contributions are welcome! Please:
 
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+1. Fork this project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 许可证
+## License
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-## 联系方式
+## Contact
 
-如有问题或建议，请提交 Issue。
+For questions or suggestions, please submit an Issue.

@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// PodInfo 存储 Pod 的关键信息
+// PodInfo stores pod information
 type PodInfo struct {
 	UID         string            `json:"uid"`
 	Name        string            `json:"name"`
@@ -28,7 +28,7 @@ type PodInfo struct {
 	CreatedAt   time.Time         `json:"createdAt"`
 }
 
-// PodCache 管理 Pod 信息的缓存
+// PodCache manages pod information cache
 type PodCache struct {
 	clientset *kubernetes.Clientset
 	informer  cache.SharedIndexInformer
@@ -37,7 +37,7 @@ type PodCache struct {
 	synced    bool
 }
 
-// NewPodCache 创建新的 Pod 缓存实例
+// NewPodCache creates a new pod cache instance
 func NewPodCache() (*PodCache, error) {
 	config, err := getKubernetesConfig()
 	if err != nil {
@@ -59,7 +59,7 @@ func NewPodCache() (*PodCache, error) {
 		synced:    false,
 	}
 
-	// 注册事件处理器
+	// Register event handlers
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    pc.onAdd,
 		UpdateFunc: pc.onUpdate,
@@ -69,15 +69,15 @@ func NewPodCache() (*PodCache, error) {
 	return pc, nil
 }
 
-// getKubernetesConfig 获取 Kubernetes 配置
+// getKubernetesConfig retrieves Kubernetes configuration
 func getKubernetesConfig() (*rest.Config, error) {
-	// 优先使用集群内配置
+	// Try in-cluster config first
 	config, err := rest.InClusterConfig()
 	if err == nil {
 		return config, nil
 	}
 
-	// 回退到 kubeconfig
+	// Fallback to kubeconfig
 	kubeconfig := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
 	config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
@@ -87,13 +87,13 @@ func getKubernetesConfig() (*rest.Config, error) {
 	return config, nil
 }
 
-// Start 启动 informer
+// Start starts the informer
 func (pc *PodCache) Start(ctx context.Context) error {
 	go pc.informer.Run(ctx.Done())
 	return nil
 }
 
-// WaitForCacheSync 等待缓存同步
+// WaitForCacheSync waits for cache synchronization
 func (pc *PodCache) WaitForCacheSync(ctx context.Context) bool {
 	synced := cache.WaitForCacheSync(ctx.Done(), pc.informer.HasSynced)
 	if synced {
@@ -104,14 +104,14 @@ func (pc *PodCache) WaitForCacheSync(ctx context.Context) bool {
 	return synced
 }
 
-// IsSynced 检查缓存是否已同步
+// IsSynced checks if cache is synchronized
 func (pc *PodCache) IsSynced() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return pc.synced
 }
 
-// GetPodByUID 根据 UID 获取 Pod 信息
+// GetPodByUID retrieves pod information by UID
 func (pc *PodCache) GetPodByUID(uid types.UID) (*PodInfo, error) {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
@@ -124,14 +124,14 @@ func (pc *PodCache) GetPodByUID(uid types.UID) (*PodInfo, error) {
 	return pod, nil
 }
 
-// GetPodCount 获取缓存中的 Pod 数量
+// GetPodCount returns the number of pods in cache
 func (pc *PodCache) GetPodCount() int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return len(pc.pods)
 }
 
-// onAdd 处理 Pod 添加事件
+// onAdd handles pod add events
 func (pc *PodCache) onAdd(obj interface{}) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
@@ -143,7 +143,7 @@ func (pc *PodCache) onAdd(obj interface{}) {
 	pc.pods[pod.UID] = convertPodToPodInfo(pod)
 }
 
-// onUpdate 处理 Pod 更新事件
+// onUpdate handles pod update events
 func (pc *PodCache) onUpdate(oldObj, newObj interface{}) {
 	pod, ok := newObj.(*corev1.Pod)
 	if !ok {
@@ -155,11 +155,11 @@ func (pc *PodCache) onUpdate(oldObj, newObj interface{}) {
 	pc.pods[pod.UID] = convertPodToPodInfo(pod)
 }
 
-// onDelete 处理 Pod 删除事件
+// onDelete handles pod delete events
 func (pc *PodCache) onDelete(obj interface{}) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		// 处理 DeletedFinalStateUnknown 情况
+		// Handle DeletedFinalStateUnknown case
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			return
@@ -175,7 +175,7 @@ func (pc *PodCache) onDelete(obj interface{}) {
 	delete(pc.pods, pod.UID)
 }
 
-// convertPodToPodInfo 将 Pod 对象转换为 PodInfo
+// convertPodToPodInfo converts Pod object to PodInfo
 func convertPodToPodInfo(pod *corev1.Pod) *PodInfo {
 	return &PodInfo{
 		UID:         string(pod.UID),

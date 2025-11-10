@@ -1,81 +1,81 @@
-# 快速开始指南
+# Quick Start Guide
 
-## 三步部署到 Kubernetes
+## Deploy to Kubernetes in Three Steps
 
-### 1. 构建镜像
+### 1. Build Image
 ```bash
 docker build -t pod-index:latest .
 ```
 
-如果使用 Minikube：
+If using Minikube:
 ```bash
 minikube image load pod-index:latest
 ```
 
-如果使用 Kind：
+If using Kind:
 ```bash
 kind load docker-image pod-index:latest
 ```
 
-### 2. 部署到集群
+### 2. Deploy to Cluster
 ```bash
 kubectl apply -k deploy/
 ```
 
-### 3. 验证部署
+### 3. Verify Deployment
 ```bash
-# 检查 Pod 状态
+# Check Pod status
 kubectl get pods -l app=pod-index
 
-# 端口转发
+# Port forward
 kubectl port-forward svc/pod-index 8080:80
 ```
 
-## 测试 API
+## Test API
 
 ```bash
-# 健康检查
+# Health check
 curl http://localhost:8080/health
 
-# 获取任意 Pod 的 UID 并查询
+# Get any Pod UID and query
 POD_UID=$(kubectl get pod -A -o jsonpath='{.items[0].metadata.uid}')
 curl "http://localhost:8080/api/v1/pod?uid=${POD_UID}"
 ```
 
-## 一键部署（推荐）
+## One-Click Deploy (Recommended)
 
 ```bash
-# 自动构建、加载镜像并部署
+# Automatically build, load image and deploy
 ./scripts/build-and-deploy.sh
 
-# 自动测试 API
+# Automatically test API
 ./scripts/test-api.sh http://localhost:8080
 ```
 
-## 本地开发
+## Local Development
 
 ```bash
-# 运行服务（需要有效的 kubeconfig）
+# Run service (requires valid kubeconfig)
 go run main.go
 
-# 或使用 Make
+# Or use Make
 make run
 ```
 
-## 卸载
+## Uninstall
 
 ```bash
 kubectl delete -k deploy/
 ```
 
-## 常用命令
+## Common Commands
 
 ```bash
-make help           # 查看所有可用命令
-make build          # 编译
-make docker-build   # 构建 Docker 镜像
-make deploy         # 部署到 K8s
-make undeploy       # 卸载
+make help           # View all available commands
+make build          # Compile
+make docker-build   # Build Docker image
+make deploy         # Deploy to K8s
+make undeploy       # Uninstall
 ```
 
-完整文档请参考 [README_CN.md](README_CN.md)
+For complete documentation, see [README_CN.md](README_CN.md)
