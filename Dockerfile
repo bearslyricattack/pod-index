@@ -28,6 +28,9 @@ WORKDIR /root/
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/pod-index .
 
+# ⭐ 添加执行权限 (关键修复)
+RUN chmod +x /root/pod-index
+
 # 暴露端口
 EXPOSE 8080
 
